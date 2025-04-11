@@ -36,7 +36,7 @@ os.environ["HUGGINGFACE_TOKEN"] = "your_token_here"
 
 2. Run the training script:
 ```bash
-python model_trainer_v_1.py
+python model_trainer_v_1_1.py
 ```
 
 3. Replace [User] with the user you are currently logged into your computer as.
