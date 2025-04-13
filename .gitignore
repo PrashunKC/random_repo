@@ -42,5 +42,6 @@ checkpoint*/
 validation/
 
 # Tokens and sensitive info
+HF_TOKEN=your_new_token_here
 .env
 *.token
