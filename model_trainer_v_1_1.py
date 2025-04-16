@@ -119,7 +119,7 @@ def select_precision():
         except ValueError:
             print("Please enter a valid number")
 
-os.environ["HUGGINGFACE_TOKEN"] = ""  # Add your token here
+os.environ["HUGGINGFACE_TOKEN"] = "HUGGINGFACE_TOKEN"  # Replace with real huggingface token
 os.environ["HF_HOME"] = "./.cache/huggingface"
 
 # Configure extreme memory optimization
@@ -1442,8 +1442,8 @@ def train(test_mode=False, force_cpu=False):
     precision_mode = select_precision()
     
     # Set chunk size based on mode
-    chunk_size = 10 if test_mode else 20
-    
+    chunk_size = 10 if test_mode else 100  # Changed from 20 to 100
+
     if test_mode:
         print("⚠️ Test mode enabled: Using reduced dataset and settings")
         active_configs = TEST_MODE_CONFIGS
