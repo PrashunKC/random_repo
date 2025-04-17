@@ -189,116 +189,6 @@ TEST_MODE_CONFIGS = {
     }
 }
 
-# CHANGE 1: Scan blob directory and find all available dataset files
-def scan_blob_directory(base_dir):
-    """Scan blob directory and find all suitable dataset files"""
-    print(f"\n🔍 Scanning for datasets in: {base_dir}")
-    
-    all_blobs = {}
-    count = 0
-    total_size_gb = 0
-    
-    # Walk through all directories recursively
-    for root, _, files in os.walk(base_dir):
-        # Look for files in blob directories
-        if "blobs" in root:
-            for filename in files:
-                file_path = os.path.join(root, filename)
-                file_size = os.path.getsize(file_path) / (1024**3)  # Size in GB
-                
-                # Skip very small files (likely metadata)
-                if file_size < 0.0001:  # Skip files smaller than 1KB
-                    continue
-                    
-                # Check if file contains usable data
-                try:
-                    with open(file_path, 'rb') as f:
-                        header = f.read(4096)  # Read first 4KB
-                        text = header.decode('utf-8', errors='ignore')
-                        
-                        # Look for JSON indicators
-                        if ('{' in text and '}' in text) or ('[' in text and ']' in text):
-                            # Use shortened hash as key
-                            key = os.path.basename(file_path)[:8]
-                            all_blobs[f"dataset_{key}"] = file_path
-                            count += 1
-                            total_size_gb += file_size
-                            print(f"Found dataset: {os.path.basename(file_path)} ({file_size:.2f} GB)")
-                except Exception as e:
-                    pass  # Skip files we can't read
-    
-    print(f"\nFound {count} dataset blobs totaling {total_size_gb:.2f} GB")
-    return all_blobs
-
-# CHANGE 2: Group datasets by content type and create training phases
-def create_phase_configs_from_blobs(base_dir):
-    """Create phase configs automatically from blob directory contents"""
-    all_blobs = scan_blob_directory(base_dir)
-    
-    if not all_blobs:
-        print("⚠️ No datasets found in blob directory!")
-        return {}
-    
-    # Group datasets by apparent type
-    dataset_groups = {
-        "code": {},
-        "text": {},
-        "chat": {},
-        "math": {}
-    }
-    
-    # Simple heuristic file categorization
-    for key, path in all_blobs.items():
-        try:
-            with open(path, 'rb') as f:
-                sample = f.read(10000).decode('utf-8', errors='ignore')
-                
-                if '"function"' in sample or '"code"' in sample or '"python"' in sample:
-                    dataset_groups["code"][key] = path
-                elif '"conversation"' in sample or '"message"' in sample or '"chat"' in sample:
-                    dataset_groups["chat"][key] = path
-                elif '"problem"' in sample or '"equation"' in sample or '"math"' in sample:
-                    dataset_groups["math"][key] = path
-                else:
-                    dataset_groups["text"][key] = path
-        except:
-            # Default to text if we can't analyze
-            dataset_groups["text"][key] = path
-    
-    # Create configs for non-empty groups
-    configs = {}
-    for i, (group_name, files) in enumerate(dataset_groups.items(), 1):
-        if files:
-            configs[f"phase{i}_{group_name}"] = {
-                "name": "json",
-                "split": "combined",
-                "text_column": "text",  # Will be auto-detected during loading
-                "data_files": files,
-                "max_samples": 50000,
-                "trust_remote_code": True,
-                "available_splits": list(files.keys())
-            }
-    
-    print(f"\nCreated {len(configs)} training phases from available datasets")
-    for phase, config in configs.items():
-        file_count = len(config["data_files"])
-        print(f"- {phase}: {file_count} files")
-    
-    return configs
-
-# CHANGE 3: Replace static dataset config with dynamic scanning
-# Add this right after the TEST_MODE_CONFIGS definition
-# Base directory containing datasets
-hf_cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub")
-
-# Dynamically scan for all available datasets
-DATASET_CONFIGS = create_phase_configs_from_blobs(hf_cache_dir)
-
-# If no datasets found, fall back to default config
-if not DATASET_CONFIGS:
-    print("⚠️ Using default dataset configuration")
-    # Keep your existing DATASET_CONFIGS as a fallback
-
 def optimize_cuda_settings():
     torch.cuda.empty_cache()
     torch.backends.cudnn.benchmark = True
@@ -335,6 +225,21 @@ def get_device_settings(force_cpu=False):
         device = torch.device("cpu")
         print("⚠️ No GPU detected, falling back to CPU")
         return device, {}
+
+DATASET_CONFIGS = {
+    "phase1": {
+        "name": "json",
+        "split": "combined",  # Fixed duplicate key issue
+        "text_column": "text",
+        "data_files": {
+            "chat": r"C:\Users\nitro V16\.cache\huggingface\hub\datasets--nvidia--Llama-Nemotron-Post-Training-Dataset\blobs\71a04ec30b93abaf9121eca67baa5f2d9304adc3a5a28b38121b2ac68056d12b",
+            "safety": r"C:\Users\nitro V16\.cache\huggingface\hub\datasets--nvidia--Llama-Nemotron-Post-Training-Dataset\blobs\e3ffe6f7a469d276d6f1af7568f116ce9cabe28274a949c6ffdd1f4c240f75c8"
+        },
+        "max_samples": 25000,
+        "trust_remote_code": True,
+        "available_splits": ["chat", "safety"]
+    }
+}
 
 def clear_dataset_cache(config: Dict) -> bool:
     try:
