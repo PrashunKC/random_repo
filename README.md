@@ -53,4 +53,5 @@ frequency in the `train()` function.
 
 ## License
 
-MIT License - Feel free to use and modify as needed.
+
+BSD3 liscense.
