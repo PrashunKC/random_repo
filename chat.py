@@ -1,3 +1,10 @@
+"""Interactive terminal inference for a locally saved causal language model.
+
+The script expects a Hugging Face-compatible model and tokenizer under
+``saved_model/final_model``. It is an inference client for the trainer output;
+it does not train or download a model.
+"""
+
 import torch
 import os
 from transformers import GPT2LMHeadModel, GPT2Tokenizer

@@ -1,3 +1,12 @@
+"""Interactive GPT-style fine-tuning pipeline.
+
+The entry point offers full, test, and CPU modes, then selects a base model,
+precision, dataset configuration, and training phases. Checkpoints and the
+final model are written below the configured checkpoint directory. Dataset
+paths and model settings are currently constants in this script, so review
+them for the local machine before starting a run.
+"""
+
 import os
 import sys
 import torch
